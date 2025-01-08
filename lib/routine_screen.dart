@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:confetti/confetti.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:urbanflutter/streak.dart';
+
 
 class RoutineScreen extends StatefulWidget {
   @override
@@ -164,174 +166,193 @@ class _RoutineScreenState extends State<RoutineScreen> {
     DateTime now = DateTime.now();
     String formattedDate = DateFormat('EEEE, MMM d, yyyy').format(now);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'Daily Skincare Routine',
-                style: GoogleFonts.poppins(
-                  color: Colors.black,
-                  fontSize: 22,
-                ),
-              ),
-            ),
-            Text(
-              formattedDate,
-              style: GoogleFonts.poppins(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
+    return WillPopScope(
+      onWillPop: () async {
+        // Navigate to StreakScreen when back is pressed
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => StreakScreen()), // Make sure StreakScreen is imported
+        );
+        return false; // Prevent the default back action
+      },
+      child: Scaffold(
         backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Stack(
+        appBar: AppBar(
+      title: Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Divider(height: 15),
-                    SizedBox(height: 25),
-                    Text(
-                      completedSteps.toInt() == routineItems.length
-                          ? '🎉 All Steps Completed! 🎉'
-                          : '${routineItems.length - completedSteps.toInt()} Step away from Streak',
-                      style: GoogleFonts.poppins(
-                        color: Colors.black,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Slider(
-                      value: completedSteps,
-                      min: 0,
-                      max: routineItems.length.toDouble(),
-                      divisions: routineItems.length,
-                      onChanged: (value) {},
-                      activeColor: Colors.pink[200],
-                      inactiveColor: Colors.grey.shade300,
-                    ),
-                  ],
-                ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              'Daily Skincare Routine',
+              style: GoogleFonts.poppins(
+                color: Colors.black,
+                fontSize: 22,
               ),
-              if (!hideCards)
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: routineItems.length,
-                    itemBuilder: (context, index) {
-                      final item = routineItems[index];
-                      return Dismissible(
-                        key: UniqueKey(),
-                        direction: DismissDirection.horizontal,
-                        onDismissed: (direction) {
-                          if (direction == DismissDirection.startToEnd) {
-                            _addNoteDialog(index);
-                          } else if (direction == DismissDirection.endToStart && item['note'].isEmpty) {
-                            _showNoteAlert(index);
-                          }
-                        },
-                        confirmDismiss: (direction) async {
-                          if (direction == DismissDirection.endToStart && item['note'].isNotEmpty) {
-                            return false;
-                          }
-                          return true;
-                        },
-                        background: Container(
-                          color: Colors.blue,
-                          alignment: Alignment.centerLeft,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: const Icon(Icons.edit, color: Colors.white),
+            ),
+          ),
+          Text(
+            formattedDate,
+            style: GoogleFonts.poppins(
+              color: Colors.grey,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+      centerTitle: true,
+      backgroundColor: Colors.white,
+      elevation: 0,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back, color: Colors.black),  // Back button icon
+        onPressed: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => StreakScreen()),  // Navigate to StreakScreen
+          );
+        },
+      ),
+    ),
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Divider(height: 15),
+                      SizedBox(height: 25),
+                      Text(
+                        completedSteps.toInt() == routineItems.length
+                            ? '🎉 All Steps Completed! 🎉'
+                            : '${routineItems.length - completedSteps.toInt()} Step away from Streak',
+                        style: GoogleFonts.poppins(
+                          color: Colors.black,
+                          fontSize: 16,
                         ),
-                        secondaryBackground: Container(
-                          color: Colors.red,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: const Icon(Icons.warning, color: Colors.white),
-                        ),
-                        child: Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          child: ListTile(
-                            leading: Icon(
-                              item['isCompleted'] ? Icons.check_circle : Icons.circle_outlined,
-                              color: item['isCompleted'] ? Colors.green : Colors.grey,
-                            ),
-                            title: Text(item['title'] ?? ''),
-                            subtitle: Text(
-                              item['note']?.isNotEmpty == true
-                                  ? '${item['note']}'
-                                  : 'Swipe left to add note',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(Icons.camera_alt, color: Colors.blue),
-                                  onPressed: () => _pickImage(index),
-                                ),
-                                if (item['photoUrl'] != null)
-                                  IconButton(
-                                    icon: Icon(Icons.image, color: Colors.green),
-                                    onPressed: () {
-                                      // Display the image (optional)
-                                    },
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                      ),
+                      Slider(
+                        value: completedSteps,
+                        min: 0,
+                        max: routineItems.length.toDouble(),
+                        divisions: routineItems.length,
+                        onChanged: (value) {},
+                        activeColor: Colors.pink[200],
+                        inactiveColor: Colors.grey.shade300,
+                      ),
+                    ],
                   ),
                 ),
-            ],
-          ),
-          if (showCongratulations)
-            Container(
-              color: Colors.white.withOpacity(0.9),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ConfettiWidget(
-                      confettiController: confettiController,
-                      blastDirectionality: BlastDirectionality.explosive,
-                      numberOfParticles: 50,
-                      colors: [Colors.pink, Colors.blue, Colors.yellow, Colors.green],
+                if (!hideCards)
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: routineItems.length,
+                      itemBuilder: (context, index) {
+                        final item = routineItems[index];
+                        return Dismissible(
+                          key: UniqueKey(),
+                          direction: DismissDirection.horizontal,
+                          onDismissed: (direction) {
+                            if (direction == DismissDirection.startToEnd) {
+                              _addNoteDialog(index);
+                            } else if (direction == DismissDirection.endToStart && item['note'].isEmpty) {
+                              _showNoteAlert(index);
+                            }
+                          },
+                          confirmDismiss: (direction) async {
+                            if (direction == DismissDirection.endToStart && item['note'].isNotEmpty) {
+                              return false;
+                            }
+                            return true;
+                          },
+                          background: Container(
+                            color: Colors.blue,
+                            alignment: Alignment.centerLeft,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: const Icon(Icons.edit, color: Colors.white),
+                          ),
+                          secondaryBackground: Container(
+                            color: Colors.red,
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: const Icon(Icons.warning, color: Colors.white),
+                          ),
+                          child: Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            child: ListTile(
+                              leading: Icon(
+                                item['isCompleted'] ? Icons.check_circle : Icons.circle_outlined,
+                                color: item['isCompleted'] ? Colors.green : Colors.grey,
+                              ),
+                              title: Text(item['title'] ?? ''),
+                              subtitle: Text(
+                                item['note']?.isNotEmpty == true
+                                    ? '${item['note']}'
+                                    : 'Swipe left to add note',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.camera_alt, color: Colors.blue),
+                                    onPressed: () => _pickImage(index),
+                                  ),
+                                  if (item['photoUrl'] != null)
+                                    IconButton(
+                                      icon: Icon(Icons.image, color: Colors.green),
+                                      onPressed: () {
+                                        // Display the image (optional)
+                                      },
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    const Text(
-                      '🎉 Congratulations! 🎉',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                  ),
+              ],
+            ),
+            if (showCongratulations)
+              Container(
+                color: Colors.white.withOpacity(0.9),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ConfettiWidget(
+                        confettiController: confettiController,
+                        blastDirectionality: BlastDirectionality.explosive,
+                        numberOfParticles: 50,
+                        colors: [Colors.pink, Colors.blue, Colors.yellow, Colors.green],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'You completed your routine!',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                      const Text(
+                        '🎉 Congratulations! 🎉',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      const Text(
+                        'You completed your routine!',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
