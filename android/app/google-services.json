@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "767071743798",
+    "project_id": "urban-556e3",
+    "storage_bucket": "urban-556e3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:767071743798:android:739efb4f079003d423cd97",
+        "android_client_info": {
+          "package_name": "com.example.urbanflutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASGxnLaIWbU6sVDGfur1sYnwIheT-y4-0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
